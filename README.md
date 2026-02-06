@@ -104,6 +104,26 @@ The KMeans algorithm was trained using PySpark's distributed engine to ensure sc
 
 ---
 
-# Future Work
-* **Cluster Profiling:** Perform statistical analysis on each cluster to define personas (e.g., "Wholesale Buyers").
-* **Marketing Strategy:** Integrate with a CRM to launch targeted email campaigns.
+# Cluster profiling 
+
+Through K-Means clustering of transaction data, four customer segments emerged based on their engagement and spending habits. These segments represent a clear hierarchy of customer health, defined by a 'Power User' core (Segment 1) and a large base of lapsed shoppers (Segment 0). The following profiles outline the statistical behavior and strategic recommendations for each group.
+
+**Segment 1: "The Champions" (n=409)** 
+* **The Data:** Lowest Recency (73 days), Highest Frequency (12.8), Highest Spend ($4,045).
+* **Insight:** These are your most active and freshest customers. With the lowest recency and highest frequency, they are in a virtuous cycle of buying. They are the core engine of your revenue.
+* **Action:** Implement a VIP Loyalty Program. Focus on retention and brand advocacy.
+
+**Segment 3: "Active Loyalists" (n=707)**
+* **The Data:** Low Recency (104 days), High Frequency (9.2), High Spend ($2,439).
+* **Insight:** A very healthy segment. While they don't spend as much as Segment 1, they are still very recent (shopping roughly every 3.5 months). They are highly engaged and represent the best opportunity for upselling.
+* **Action:** Personalized Recommendations. Use their purchase history to suggest higher-value items to move them toward Segment 1.
+
+**Segment 2: "Fading/Occasional Shoppers" (n=1,423)**
+* **The Data:** Moderate Recency (156 days), Moderate Frequency (5.0), Moderate Spend ($1,192).
+* **Insight:** This group is at a crossroads. A mean recency of 156 days (~5 months) suggests they are starting to drift away. Because the standard deviation (165) is larger than the mean, this group is highly polarized: some are still active, but many have already crossed the 300-day mark.
+* **Action:** Re-activation Campaigns. Targeted "limited time" offers are needed here to trigger a purchase before they lapse into Segment 0.
+
+**Segment 0: "Lapsed/Inactive" (n=2,705)**
+* **The Data:** Highest Recency (299 days), Lowest Frequency (2.0), Lowest Spend ($343).
+* **Insight:** These customers are largely cold. With a mean recency of nearly 300 days and only 2 purchases on average, these are likely one-time shoppers or people who have switched to a competitor.
+* **Action:** Win-Back or Sunset. Attempt one deep-discount "Win-back" campaign. If they don't respond, it is more cost-effective to stop marketing to them to save on campaign costs.
