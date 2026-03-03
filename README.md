@@ -121,6 +121,6 @@ Before profiling, I validated the distinctness of the customer segments by perfo
 * **The Data:** Extremely High Recency (471 days), High Age (565 days), Low Frequency (2.44), and Moderate Monetary ($552).
 * **Insight:** These are "One-and-Done" or early-lifecycle customers who joined nearly a year and a half ago but stopped engaging shortly after. With an average Recency of 471 days, they are well beyond the standard churn window. The fact that their Min Recency is 144 days suggests that not a single person in this group has shopped in the last 4–5 months.
 * **Action:**  Win-Back or Archive: This group requires aggressive "Win-back" offers (e.g., "We Miss You" deep discounts) to determine if they are still reachable.
-* * Churn Analysis: Use this group to study why they left. Since their Diversity (33) is the lowest of all groups, they may not have found enough variety to keep them interested.
-* * Cost Optimization: If re-activation fails, remove them from active marketing spend (emails/SMS) to optimize ROI.
+* * **Churn Analysis:** Use this group to study why they left. Since their Diversity (33) is the lowest of all groups, they may not have found enough variety to keep them interested.
+* * **Cost Optimization:** If re-activation fails, remove them from active marketing spend (emails/SMS) to optimize ROI.
 
