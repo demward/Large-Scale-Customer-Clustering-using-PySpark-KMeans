@@ -1,7 +1,7 @@
 ---
 title: "Scalable Customer Segmentation"
 author: "Demward"
-date: "2026-02-04"
+date: "2026-03-02"
 output: github_document
 ---
 
@@ -51,9 +51,11 @@ In this phase, we extract the raw data and engineer features that represent cust
 **2. Feature Engineering:**
 We transform the transactional data into a customer-centric dataframe using the following metrics:
 * **Recency:** Days since the last purchase (relative to 2012-12-10).
+* **Age:** Days since the first purchase (relative to 2012-12-10).
 * **Frequency:** Total number of transactions per customer.
 * **Diversity:** Count of unique items purchased.
 * **Monetary:** Total spend per customer.
+* **Average Ticket:** Average spend per customer
 
 <img width="940" height="551" alt="Code2_Create_CustomerGrouped_dataframe" src="https://github.com/user-attachments/assets/7a55dd23-7d41-4157-8ede-78c0191aa362" />
 
@@ -73,17 +75,13 @@ The bounds are defined as:
 * **Lower Bound:** $Q_1 - 1.5 \times IQR$
 * **Upper Bound:** $Q_3 + 1.5 \times IQR$
 
-### ML Pipeline Preparation
-Since PySpark MLlib requires numerical input vectors, we implement the following transformation steps:
+### Principal Component Analysis (PCA)
 
-1. **StringIndexer:** Converts categorical country labels into numerical indices.
-<img width="989" height="397" alt="Code4_StringIndexer" src="https://github.com/user-attachments/assets/a4d0a23b-671e-445e-9841-edbd0745533a" />
+To reduce computational overhead and simplify the model, I applied Principal Component Analysis (PCA). To determine the optimal number of components, I analyzed the cumulative explained variance. I selected a threshold of 95% to ensure maximum information retention with minimal complexity.
 
-2. **OneHotEncoder (OHE):** Transforms indexed categories into binary vectors to avoid assuming an ordinal relationship between countries.
-<img width="933" height="356" alt="Code5_OHE" src="https://github.com/user-attachments/assets/808d2e5b-0d7d-4c9b-ba90-7923bb34c984" />
+<img width="442" height="124" alt="PCA_cummulative_variance" src="https://github.com/user-attachments/assets/cdbe676c-9f92-4279-bcbe-74bd6d56e421" />
 
-3. **VectorAssembler:** Consolidates all feature columns into a single `features` vector.
-<img width="926" height="363" alt="Code6_VectorAssembler" src="https://github.com/user-attachments/assets/f20964e9-18d7-4916-96f8-013cbc27568b" />
+In this instance, 3 components were selected, as they account for 96% of the total variance.
 
 ---
 
@@ -92,38 +90,37 @@ Since PySpark MLlib requires numerical input vectors, we implement the following
 ### Hyperparameter Tuning: The Elbow Method
 To determine the optimal number of clusters ($k$), we evaluate the cost function across a range of values.
 
-<img width="576" height="448" alt="Code7_ElbowMethod" src="https://github.com/user-attachments/assets/9766b55f-5872-4172-9163-b53fdd625200" />
+<img width="571" height="437" alt="image" src="https://github.com/user-attachments/assets/2585eb6b-e205-4aaf-b6e0-aa29508b6993" />
 
-Based on the "elbow" observed in the plot, **$k=4$** was selected as the optimal cluster count.
+Based on the "elbow" observed in the plot, **$k=3$** was selected as the optimal cluster count.
 
 ### Implementation & Evaluation
 The KMeans algorithm was trained using PySpark's distributed engine to ensure scalability.
 <img width="920" height="351" alt="Code8_KMeans" src="https://github.com/user-attachments/assets/8d61ee3a-1cf9-4417-911b-dd09deb6489f" />
 
-**Performance Metric:** The model achieved a **Silhouette Score of 0.7**, indicating high cluster density and clear separation between segments.
+**Performance Metric:** The model achieved a **Silhouette Score of 0.63**, indicating high cluster density and clear separation between segments.
 
 ---
 
 # Cluster profiling 
+Before profiling, I validated the distinctness of the customer segments by performing a **Multivariate Analysis of Variance (MANOVA)** across six key features: Recency, Frequency, Monetary value, Average Ticket, Age, and Diversity. With a resulting **p < 0.05**, I rejected the null hypothesis, statistically confirming that the identified groups are significantly different from one another.
 
-Through K-Means clustering of transaction data, four customer segments emerged based on their engagement and spending habits. These segments represent a clear hierarchy of customer health, defined by a 'Power User' core (Segment 1) and a large base of lapsed shoppers (Segment 0). The following profiles outline the statistical behavior and strategic recommendations for each group.
-
-**Segment 1: "The Champions" (n=409)** 
-* **The Data:** Lowest Recency (73 days), Highest Frequency (12.8), Highest Spend ($4,045).
-* **Insight:** These are your most active and freshest customers. With the lowest recency and highest frequency, they are in a virtuous cycle of buying. They are the core engine of your revenue.
+**Segment 0: "The Champions" (n=1,712)** 
+* **The Data:** Lowest Recency (79 days), Highest Age (611.8 days), Highest Frequency (8.8), Highest Spend ($2,216).
+* **Insight:** These are your most active and loyal customers. With the lowest recency, highest frequency and highest age, they are in a virtuous cycle of buying. They are the core engine of your revenue.
 * **Action:** Implement a VIP Loyalty Program. Focus on retention and brand advocacy.
 
-**Segment 3: "Active Loyalists" (n=707)**
-* **The Data:** Low Recency (104 days), High Frequency (9.2), High Spend ($2,439).
-* **Insight:** A very healthy segment. While they don't spend as much as Segment 1, they are still very recent (shopping roughly every 3.5 months). They are highly engaged and represent the best opportunity for upselling.
-* **Action:** Personalized Recommendations. Use their purchase history to suggest higher-value items to move them toward Segment 1.
+**Segment 2: "Occasional Explorers" (n=1,715)** 
+* **The Data:** Moderate Recency (86 days), Low Frequency (2.8), and High Diversity (42 items).
+* **Insight:** This segment displays a bimodal age distribution, mixing true "New" acquisitions (Age $\approx$ 1) with "Legacy" customers (Age > 400) who have become infrequent. Despite low visit frequency, their **High Average Ticket ($283)** indicates high potential value per transaction.
+* **Action:**
+* * **For New Leads:** Implement personalized "Next-Best-Offer" recommendations to build habit.
+* * **For Legacy Leads:** Deploy re-activation "Win-back" campaigns with limited-time incentives to reduce churn risk.
+ 
+**Segment 1: "Lost Customers" (n=1,796)**
+* **The Data:** Extremely High Recency (471 days), High Age (565 days), Low Frequency (2.44), and Moderate Monetary ($552).
+* **Insight:** These are "One-and-Done" or early-lifecycle customers who joined nearly a year and a half ago but stopped engaging shortly after. With an average Recency of 471 days, they are well beyond the standard churn window. The fact that their Min Recency is 144 days suggests that not a single person in this group has shopped in the last 4–5 months.
+* **Action:**  Win-Back or Archive: This group requires aggressive "Win-back" offers (e.g., "We Miss You" deep discounts) to determine if they are still reachable.
+* * Churn Analysis: Use this group to study why they left. Since their Diversity (33) is the lowest of all groups, they may not have found enough variety to keep them interested.
+* * Cost Optimization: If re-activation fails, remove them from active marketing spend (emails/SMS) to optimize ROI.
 
-**Segment 2: "Fading/Occasional Shoppers" (n=1,423)**
-* **The Data:** Moderate Recency (156 days), Moderate Frequency (5.0), Moderate Spend ($1,192).
-* **Insight:** This group is at a crossroads. A mean recency of 156 days (~5 months) suggests they are starting to drift away. Because the standard deviation (165) is larger than the mean, this group is highly polarized: some are still active, but many have already crossed the 300-day mark.
-* **Action:** Re-activation Campaigns. Targeted "limited time" offers are needed here to trigger a purchase before they lapse into Segment 0.
-
-**Segment 0: "Lapsed/Inactive" (n=2,705)**
-* **The Data:** Highest Recency (299 days), Lowest Frequency (2.0), Lowest Spend ($343).
-* **Insight:** These customers are largely cold. With a mean recency of nearly 300 days and only 2 purchases on average, these are likely one-time shoppers or people who have switched to a competitor.
-* **Action:** Win-Back or Sunset. Attempt one deep-discount "Win-back" campaign. If they don't respond, it is more cost-effective to stop marketing to them to save on campaign costs.
